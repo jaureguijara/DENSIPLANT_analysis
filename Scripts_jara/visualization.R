@@ -4,10 +4,15 @@ library(broom)
 library(dplyr)
 library(ggplot2)
 
-in.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/datasets")
-out.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/outputs")
-fig.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/outputs/figures")
-
+if(Sys.info()["user"] == "Jara"){
+  in.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/datasets")
+  out.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/outputs")
+  fig.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/outputs/figures")
+}else if(Sys.info()["user"] == "jaure"){
+  in.dir <- file.path("C:/Users/jaure/OneDrive - WageningenUR/Internship/DENSIPLANT/DENSIPLANT_analysis/datasets")
+  out.dir <- file.path("C:/Users/jaure/OneDrive - WageningenUR/Internship/DENSIPLANT/DENSIPLANT_analysis/outputs")
+  fig.dir <- file.path("C:/Users/jaure/OneDrive - WageningenUR/Internship/DENSIPLANT/DENSIPLANT_analysis/outputs/figures")
+}
 
 cbPalette <- c("#000000", "#E69F00",  "#009E73", "#0072B2", "#D55E00", "#CC79A7")
 densorder <- c("35","70","140", "280", "560")

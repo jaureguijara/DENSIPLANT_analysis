@@ -12,9 +12,18 @@ library(ggfortify)
 library(partykit)
 library(caret)
 
-in.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/datasets")
-out.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/outputs")
-fig.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/outputs/figures")
+if(Sys.info()["user"] == "Jara"){
+  in.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/datasets")
+  out.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/outputs")
+  fig.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/outputs/figures")
+}else if(Sys.info()["user"] == "jaure"){
+  in.dir <- file.path("C:/Users/jaure/OneDrive - WageningenUR/Internship/DENSIPLANT/DENSIPLANT_analysis/datasets")
+  out.dir <- file.path("C:/Users/jaure/OneDrive - WageningenUR/Internship/DENSIPLANT/DENSIPLANT_analysis/outputs")
+  fig.dir <- file.path("C:/Users/jaure/OneDrive - WageningenUR/Internship/DENSIPLANT/DENSIPLANT_analysis/outputs/figures")
+}
+
+
+
 
 
 setwd(in.dir)
