@@ -6,11 +6,8 @@ library(car)
 library(Hmisc)
 library(stringr)
 library(corrplot)
-library(randomForest)
-library(rpart)
 library(ggfortify)
-library(partykit)
-library(caret)
+
 
 if(Sys.info()["user"] == "Jara"){
   in.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/datasets")
@@ -51,18 +48,18 @@ for(i in unique(df$Altitude)){
     cor <- cor(as.matrix(cor_data), method = "spearman")
     cor_pval <- rcorr(as.matrix(cor_data), type = "spearman")
     
-    # setwd(paste(out.dir,"Exploration/correlations/corr", sep = "/"))
-    # write.csv(data.frame(cor), paste("spearman_correlation",i, current_date, ".csv", sep = "_"))
-    #
-    # setwd(paste(out.dir,"Exploration/correlations/pval", sep = "/"))
-    # write.csv(data.frame(cor_pval$P), paste("spearman_correlation",i, current_date, "pval", ".csv", sep = "_"))
-    #
+    setwd(paste(out.dir,"Exploration/correlations/corr", sep = "/"))
+    write.csv(data.frame(cor), paste("spearman_correlation",i, current_date, ".csv", sep = "_"))
 
-    # setwd(paste(fig.dir,"Exploration/correlations",i, sep = "/"))
-    # 
-    # png(paste(current_date, i, ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
-    # corrplot(cor, method="square", title = paste(i, current_date), mar=c(0,0,1,0))
-    # dev.off()
+    setwd(paste(out.dir,"Exploration/correlations/pval", sep = "/"))
+    write.csv(data.frame(cor_pval$P), paste("spearman_correlation",i, current_date, "pval", ".csv", sep = "_"))
+
+
+    setwd(paste(fig.dir,"Exploration/correlations",i, sep = "/"))
+
+    png(paste(current_date, i, ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
+    corrplot(cor, method="square", title = paste(i, current_date), mar=c(0,0,1,0))
+    dev.off()
 
   }
     

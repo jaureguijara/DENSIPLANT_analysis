@@ -22,6 +22,11 @@ if(Sys.info()["user"] == "Jara"){
   fig.dir <- file.path("C:/Users/jaure/OneDrive - WageningenUR/Internship/DENSIPLANT/DENSIPLANT_analysis/outputs/figures")
 }
 
+setwd(in.dir)
+df <- read.csv("combined_densiplant_dataset.csv", header = T)
+df <- df[,-1]
+df <- arrange(df, dens)
+df$dens <- as.character(df$dens)
 
 ######## 1. RANDOM FORESTS ########
 
@@ -189,13 +194,79 @@ for(j in 1:length(unique(data$Date))){
 
 ######## 2.  DECISSION (CLASSIFICATION) TREES ########
 
-# Classification per date only, including variety and flight height as factors
-# tried with PC as well and doesn't yield very good results
+## 2.1 Separation per date only, including variety and flight height as predictor variables ###
 
 cbPalette <- c("#000000", "#E69F00",  "#009E73", "#0072B2", "#D55E00", "#CC79A7")
 densorder <- c("35","70","140", "280", "560")
 data <- df
 set.seed(123)
+
+for(j in 1:length(unique(data$Date))){
+  current_date <- unique(data$Date)[j]
+  print(current_date)
+  
+  # Subset data per date 
+  
+  subset_data <- data[data$Date == current_date,]
+  
+ 
+ 
+  
+  
+  subset_data$dens <- as.factor(as.character(subset_data$dens))
+  subset_data$var <- as.factor(subset_data$var)
+  subset_data$Altitude <- as.factor(as.numeric(substring(subset_data$Altitude,1, nchar(subset_data$Altitude)-1)))
+  
+  if(length(unique(subset_data$Altitude))>1){
+    subset_data <- subset_data[,-c(1,2,6,7)]
+    
+  }
+  
+  else{
+    subset_data <- subset_data[,-c(1,2,6,7,3)]
+  }
+    
+  subset_data$dens <- factor(subset_data$dens, levels = densorder)
+
+  
+  # Create a trainControl object to control how the train function creates the model
+  train_control <- trainControl(method = "repeatedcv",   # Use cross validation
+                                number = 10,             # Use 10 partitions
+                                repeats = 10)             # Repeat 5 times
+  
+  # Set required parameters for the model type we are using**
+  #tune_grid = expand.grid(cp=c(0.001))
+  
+  
+  # Use the train() function to create the model
+  validated_tree <- train(dens ~. ,
+                          data= subset_data,                  # Data set
+                          method="rpart",                     # Model type(decision tree)
+                          trControl= train_control,           # Model control options
+                          tuneGrid = tune_grid,               # Required model parameters
+                          maxdepth = 5,                       # Additional parameters***
+                          minbucket=5,
+                          metric = "RMSE")
+
+  print(validated_tree)
+  fancyRpartPlot(validated_tree$finalModel, main = current_date)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 for(j in 1:length(unique(data$Date))){
   current_date <- unique(data$Date)[j]
   print(current_date)

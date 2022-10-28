@@ -6,13 +6,11 @@ library(tidyr)
 ### Merge all Cereal Scanner files into a single file containing all vegetation indexes ###
 
 if(Sys.info()["user"] == "Jara"){
-  in.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/datasets")
-  out.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/outputs")
-  fig.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/outputs/figures")
+  in.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/datasets/vegindex_csv_files")
+  out.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/datasets")
 }else if(Sys.info()["user"] == "jaure"){
-  in.dir <- file.path("C:/Users/jaure/OneDrive - WageningenUR/Internship/DENSIPLANT/DENSIPLANT_analysis/datasets")
-  out.dir <- file.path("C:/Users/jaure/OneDrive - WageningenUR/Internship/DENSIPLANT/DENSIPLANT_analysis/outputs")
-  fig.dir <- file.path("C:/Users/jaure/OneDrive - WageningenUR/Internship/DENSIPLANT/DENSIPLANT_analysis/outputs/figures")
+  in.dir <- file.path("C:/Users/jaure/OneDrive - WageningenUR/Internship/DENSIPLANT/DENSIPLANT_analysis/datasets/vegindex_csv_files")
+  out.dir <- file.path("C:/Users/jaure/OneDrive - WageningenUR/Internship/DENSIPLANT/DENSIPLANT_analysis/datasets")
 }
 
 filePaths <- list.files(path=in.dir,pattern="*.csv",include.dirs=T)
@@ -79,7 +77,7 @@ write.csv(design, "coordinates_var_dens_picref.csv")
 
 finalDF <- df %>% 
   merge(design, by= "picref") %>% 
-  select(Image.Name, Date, Altitude, var, dens, Rows, Plots, everything(), -picref)
+  dplyr::select(Image.Name, Date, Altitude, var, dens, Rows, Plots, everything(), -picref)
 
 print(head(finalDF))
 setwd(out.dir)

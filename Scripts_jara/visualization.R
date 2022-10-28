@@ -55,7 +55,7 @@ for(i in 1:length(unique(data$Date))){
       labs(y=name, x="Density") +
       ggtitle(paste(current_date, unique(subset_data$Altitude), name, sep="_"))
     
-    setwd(paste(fig.dir, "Boxplots", unique(subset_data$Altitude), sep ="/"))
+    setwd(paste(fig.dir, "Exploration/Boxplots", unique(subset_data$Altitude), sep ="/"))
     png(paste(current_date, unique(subset_data$Altitude), name, ".png", sep="_"), width = 6.5, height = 5.5, units = 'in', res = 300)
     plot(p1)
     dev.off()
@@ -98,7 +98,7 @@ for(i in 8:ncol(data)){
     ggtitle(paste(name, data$Altitude, sep = "_")) 
   
   
-  setwd(paste(fig.dir, data$Altitude, sep ="/"))
+  setwd(paste(fig.dir, "Exploration", "VegIndexes", data$Altitude, sep ="/"))
   png(paste(name, data$Altitude, ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
   plot(p2)
   dev.off()
@@ -135,7 +135,7 @@ for(i in 8:ncol(data)){
     labs(y=name, x="Date") +
     ggtitle(name) 
   
-  setwd(fig.dir)
+  setwd(paste(fig.dir, "Exploration", "VegIndexes", data$Altitude, sep ="/"))
   #    setwd(paste(fig.dir, "per_variety", sep ="/"))
   png(paste(name, ".png", sep="_"), width = 15, height = 10, units = 'in', res = 300)
   plot(p3)
