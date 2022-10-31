@@ -11,6 +11,7 @@ library(rpart)
 library(ggfortify)
 library(partykit)
 library(caret)
+library(rattle)
 
 if(Sys.info()["user"] == "Jara"){
   in.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/datasets")
@@ -32,7 +33,6 @@ df$dens <- as.character(df$dens)
 
 ## 1.1 USING PC ## nice results #####  per date & altitude data subset, not including variety or flight altitude
 
-cbPalette <- c("#000000", "#E69F00",  "#009E73", "#0072B2", "#D55E00", "#CC79A7")
 densorder <- c("35","70","140", "280", "560")
 
 set.seed(1289073891) 
@@ -196,10 +196,11 @@ for(j in 1:length(unique(data$Date))){
 
 ## 2.1 Separation per date only, including variety and flight height as predictor variables ###
 
-cbPalette <- c("#000000", "#E69F00",  "#009E73", "#0072B2", "#D55E00", "#CC79A7")
 densorder <- c("35","70","140", "280", "560")
 data <- df
 set.seed(123)
+
+results_df <- NULL
 
 for(j in 1:length(unique(data$Date))){
   current_date <- unique(data$Date)[j]
@@ -208,63 +209,59 @@ for(j in 1:length(unique(data$Date))){
   # Subset data per date 
   
   subset_data <- data[data$Date == current_date,]
-  
- 
- 
-  
-  
   subset_data$dens <- as.factor(as.character(subset_data$dens))
   subset_data$var <- as.factor(subset_data$var)
-  subset_data$Altitude <- as.factor(as.numeric(substring(subset_data$Altitude,1, nchar(subset_data$Altitude)-1)))
+  subset_data$Altitude <- as.factor(subset_data$Altitude)
   
   if(length(unique(subset_data$Altitude))>1){
-    subset_data <- subset_data[,-c(1,2,6,7)]
+    tree_data <- subset_data[,-c(1,2,6,7)]
     
   }
   
   else{
-    subset_data <- subset_data[,-c(1,2,6,7,3)]
+    tree_data <- subset_data[,-c(1,2,6,7,3)]
   }
     
-  subset_data$dens <- factor(subset_data$dens, levels = densorder)
+  tree_data$dens <- factor(subset_data$dens, levels = densorder)
 
   
   # Create a trainControl object to control how the train function creates the model
   train_control <- trainControl(method = "repeatedcv",   # Use cross validation
                                 number = 10,             # Use 10 partitions
-                                repeats = 10)             # Repeat 5 times
+                                repeats = 10)            # Repeat 10 times
   
-  # Set required parameters for the model type we are using**
-  #tune_grid = expand.grid(cp=c(0.001))
+  #Set required parameters for the model type we are using**
+  tune_grid = expand.grid(cp=c(0.001))
   
   
   # Use the train() function to create the model
   validated_tree <- train(dens ~. ,
-                          data= subset_data,                  # Data set
+                          data= tree_data,                  # Data set
                           method="rpart",                     # Model type(decision tree)
                           trControl= train_control,           # Model control options
                           tuneGrid = tune_grid,               # Required model parameters
                           maxdepth = 5,                       # Additional parameters***
-                          minbucket=5,
-                          metric = "RMSE")
+                          minbucket= 5)
 
-  print(validated_tree)
-  fancyRpartPlot(validated_tree$finalModel, main = current_date)
+  alt <- unique(subset_data$Altitude)
+  
+  if(length(alt) == 2){
+    alt <- "15-30m"
+  }
+  
+  if(length(alt) == 3){
+    alt <- "15-30-50m"
+  }
+  
+  results <- data.frame(validated_tree$results)
+  results$date <- current_date
+  results$alt <- alt
+  
+  results_df <- rbind(results_df, results)
+  
+  fancyRpartPlot(validated_tree$finalModel, 
+                 main = paste(current_date, alt, sep = " "))
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 for(j in 1:length(unique(data$Date))){
