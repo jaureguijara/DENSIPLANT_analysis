@@ -4,6 +4,9 @@ library(broom)
 library(PairedData)
 library(afex)
 library(performance) 
+library(stringr)
+library(plyr)
+library(emmeans)
 
 if(Sys.info()["user"] == "Jara"){
   in.dir <- file.path("F:/DENSIPLANT/2022_densiplant_herve_jara/DENSIPLANT_analysis/datasets")
@@ -28,7 +31,9 @@ df_50 <- df[df$Altitude == "50m",]
 
 data <- df[, c(1:7, 9, 17, 19, 21)]
 
-##### CHECK ANOVA ASSUMPTIONS #######
+##### 1. Data exploration for ANOVA ####
+
+## CHECK ANOVA ASSUMPTIONS 
 
 assumptions <- NULL
 
@@ -157,3 +162,86 @@ plot(hist(an$residuals))
 plot(an, which =2)
 hist(1/(subset_data$TGI))
 shapiro.test(1/(subset_data$TGI))
+
+# -------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------------------------
+
+##### 2. Analysis of Machine Learning algorithm performance ####
+
+
+## 2.1 CART ##
+
+work.dir <- paste(out.dir, "CART", sep ="/")
+
+setwd(work.dir)
+
+## to combine all datasets ##
+
+# filePaths <- list.files(path = work.dir, pattern="*.csv", include.dirs = T)
+# 
+# df <- NULL
+# 
+# for(filePath in filePaths){
+#   print(filePath)
+#   cv <- gsub("_","", gsub("-", "",str_extract(filePath, "_.*-")[]))
+#   
+#   split <- gsub("-", "", gsub(".csv", "",str_extract(filePath, "-.*")))
+# 
+# 
+#   currentDF <- read.csv(filePath, header = T)
+#   
+#   firstcolname <- colnames(currentDF)[1]
+# 
+#   if(firstcolname == "X"){
+#     currentDF <- currentDF[,-1]
+#   }
+#   
+#   currentDF$CV <- cv
+#   currentDF$split <- split
+#   
+#   print(ncol(currentDF))
+#   #print(head(currentDF))
+#   df <- rbind(df, currentDF)
+# 
+# }
+# 
+# write.csv(df, "CART_results_combination.csv")
+
+df <- read.csv("CART_results_combination.csv", header = T)
+df <- df[,-c(1,13,14)]
+
+data<- df %>% 
+  mutate(PC = ifelse(str_detect(PC, "0") , "var", "PC")) %>% 
+  mutate(ID = paste(date, alt, PC, CV, split, sep = "_")) %>% 
+  dplyr::select(Accuracy_test, ID) %>% 
+  na.omit()
+
+data_test <- df %>% 
+  na.omit() %>% 
+  mutate(PC = ifelse(str_detect(PC, "0") , "var", "PC")) %>% 
+  mutate(ID = paste(date, alt, PC, CV, split, sep = "_")) %>% 
+  dplyr::select(Accuracy_test, ID) %>% 
+  ddply("ID", summarise, 
+        N =length(Accuracy_test), 
+        mean = mean(Accuracy_test),
+        sd = sd(Accuracy_test))
+
+data <- data[data$Accuracy_test > 0.5,]
+
+an <- aov(Accuracy_test ~ ID, data = data)
+anova(an)
+
+contrasts <- lsmeans::lsmeans(an, pairwise~ID, adjust = "bonferroni")
+
+summary_test <- merge(data_test, contrasts$lsmeans, by  = "ID")
+significant_test <- data.frame(contrasts$contrasts)
+significant_test <- significant_test[significant_test$p.value < 0.05,]
+
+write.csv(summary_test, "Testing_performance_summary.csv")
+write.csv(significant_test, "Testing_performance_contrasts.csv")
+
+# -------------------------------------------------------------------------------------------------------------------
+
+## 2.2 ctree ##
+
+
