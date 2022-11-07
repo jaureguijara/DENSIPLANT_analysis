@@ -130,20 +130,20 @@ for(i in 1:length(unique(data$Date))){
   results_df <- rbind(results_df, results_1_pc)
   
   
-  setwd(paste(fig.dir, "Trees/CART", sep = "/"))
-  
-  png(paste(current_date, alt, "CART", ".png", sep="_"), width = 6.5, height = 5.5, units = 'in', res = 300)
-  
-  fancyRpartPlot(validated_tree$finalModel, 
-                 main = paste(current_date, alt, sep = " "))
-  dev.off()
-  
-  png(paste(current_date, alt, "CART_PC", ".png", sep="_"), width = 6.5, height = 5.5, units = 'in', res = 300)
-  
-  fancyRpartPlot(validated_tree_pc$finalModel, 
-                 main = paste(current_date, alt, sep = " "))
-  dev.off()
-  
+  # setwd(paste(fig.dir, "Trees/CART", sep = "/"))
+  # 
+  # png(paste(current_date, alt, "CART", ".png", sep="_"), width = 6.5, height = 5.5, units = 'in', res = 300)
+  # 
+  # fancyRpartPlot(validated_tree$finalModel, 
+  #                main = paste(current_date, alt, sep = " "))
+  # dev.off()
+  # 
+  # png(paste(current_date, alt, "CART_PC", ".png", sep="_"), width = 6.5, height = 5.5, units = 'in', res = 300)
+  # 
+  # fancyRpartPlot(validated_tree_pc$finalModel, 
+  #                main = paste(current_date, alt, sep = " "))
+  # dev.off()
+  # 
   ## 1.2 Separation per date and height, flight height not included in the model ###
   
   if(length(unique(subset_data$Altitude)) >1 ){
@@ -204,17 +204,17 @@ for(i in 1:length(unique(data$Date))){
       results_df <- rbind(results_df, results_2_pc)
       
       
-      png(paste(current_date, alt, "CART", ".png", sep="_"), width = 6.5, height = 5.5, units = 'in', res = 300)
-      
-      fancyRpartPlot(validated_tree$finalModel, 
-                     main = paste(current_date, alt, sep = " "))
-      dev.off()
-      
-      png(paste(current_date, alt, "CART_PC", ".png", sep="_"), width = 6.5, height = 5.5, units = 'in', res = 300)
-      
-      fancyRpartPlot(validated_tree_pc$finalModel, 
-                     main = paste(current_date, alt, sep = " "))
-      dev.off()
+      # png(paste(current_date, alt, "CART", ".png", sep="_"), width = 6.5, height = 5.5, units = 'in', res = 300)
+      # 
+      # fancyRpartPlot(validated_tree$finalModel, 
+      #                main = paste(current_date, alt, sep = " "))
+      # dev.off()
+      # 
+      # png(paste(current_date, alt, "CART_PC", ".png", sep="_"), width = 6.5, height = 5.5, units = 'in', res = 300)
+      # 
+      # fancyRpartPlot(validated_tree_pc$finalModel, 
+      #                main = paste(current_date, alt, sep = " "))
+      # dev.off()
     }
   }
 }
@@ -412,269 +412,3 @@ write.csv(results_df, "ctree_results.csv")
 
 # -------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------
-
-######## 3. RANDOM FORESTS ########
-
-densorder <- c("35","70","140", "280", "560")
-
-set.seed(12345) 
-results_df <- NULL
-conf_matrices <- list()
-k <- 1
-data <- df
-
-for(i in 1:length(unique(data$Date))){
-  current_date <- unique(data$Date)[i]
-  print(current_date)
-  
-  # Subset data per date 
-  
-  subset_data <- data[data$Date == current_date,]
-  subset_data$dens <- as.factor(as.character(subset_data$dens))
-  subset_data$var <- as.numeric(as.factor(subset_data$var))
-  subset_data$Altitude <- as.factor(subset_data$Altitude)
-  
-  ## 2.1 Separation per date only, including flight height as predictor variable ###
-  
-  if(length(unique(subset_data$Altitude))>1){
-    rf_data <- subset_data[,-c(1,2,6,7)]
-    rf_data$Altitude <- as.numeric(rf_data$Altitude)
-  }
-  
-  else{
-    rf_data <- subset_data[,-c(1,2,6,7,3)]
-  }
-  
-  # Train/test split
-  
-  split1<- sample(c(rep(0, 0.70 * nrow(rf_data)), rep(1, 0.30 * nrow(rf_data))))
-  
-  train <- rf_data[split1 == 0, ]
-  train_nodens <- dplyr::select(train, -dens)
-  
-  test <- rf_data[split1 == 1, ]
-  test_nodens <- dplyr::select(test, -dens)
-  
-  train$dens <- factor(train$dens, levels = densorder)
-  test$dens <- factor(test$dens, levels = densorder)
-  
-  # PCA
-  pca <- prcomp(train_nodens, center = T, scale. = T)
-  eigenval <- pca$sdev ^ 2
-  
-  PC_selected <- length(eigenval[eigenval > 1])
-  
-  train_pca_data <- data.frame(dens = train$dens, pca$x[,1:PC_selected])
-  
-  test_pca_data <- predict(pca, newdata = test_nodens)
-  test_pca_data <- data.frame(test_pca_data[,1:PC_selected])
-  
-  train$dens <- factor(train$dens, levels = densorder)
-  train_pca_data$dens <- factor(train_pca_data$dens, levels = densorder)
-  
-  # RANDOM FOREST
-  rf <- randomForest(dens~., data = train, proximity=TRUE, 
-                     ntree = 5000, importance = TRUE)
-  rf_pc <- randomForest(dens~., data = train_pca_data, proximity=TRUE, 
-                        ntree = 5000, importance = TRUE)     
-  # prediction
-  
-  pred <- predict(rf, newdata = test_nodens)
-  pred_pc <- predict(rf_pc, newdata = test_pca_data)
-  
-  cm <- confusionMatrix(pred, test$dens, mode = "everything")
-  cm_pc <- confusionMatrix(pred_pc, test$dens, mode = "everything")
-  
-  # Plot and save
-  
-  alt <- unique(subset_data$Altitude)
-  
-  if(length(alt) == 2){
-    alt <- "15-30m"
-  }
-  
-  if(length(alt) == 3){
-    alt <- "15-30-50m"
-  }
-  
-  
-  conf_matrices[[k]] <- cm
-  names(conf_matrices)[k] <- paste(alt, current_date, sep = "_")
-  k <- k +1
-  conf_matrices[[k]] <- cm_pc
-  names(conf_matrices)[k] <- paste(alt, current_date, "PC", PC_selected, sep = "_")
-  k <- k +1
-  
-  results <- data.frame(t(cm$overall[c(1,6,2)]))
-  results_pc <- data.frame(t(cm_pc$overall[c(1,6,2)]))
-  results$date <- current_date
-  results_pc$date <- current_date
-  
-  results$alt <- alt
-  results_pc$alt <- alt
-  
-  results$PC <- 0
-  results_pc$PC <- PC_selected
-  
-  results_df <- rbind(results_df, results)
-  results_df <- rbind(results_df, results_pc)
-  
-  setwd(paste(fig.dir, "RandomForests", sep = "/"))
-  
-  # Plot error  
-  png(paste(current_date, alt, "RF", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
-  
-  layout(matrix(c(1,2),nrow=1),
-         width=c(4,1)) 
-  par(mar=c(5,4,4,0)) #No margin on the right side
-  plot(rf, 
-       main = paste(current_date, alt, sep = " "))
-  par(mar=c(5,0,4,2)) #No margin on the left side
-  plot(c(0,1),type="n", axes=F, xlab="", ylab="")
-  legend("topright", colnames(rf_pc$err.rate),col=1:6,cex=0.8,fill=1:6)
-  dev.off()
-  
-  png(paste(current_date, alt, "RF_PC", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
-  
-  layout(matrix(c(1,2),nrow=1),
-         width=c(4,1)) 
-  par(mar=c(5,4,4,0)) #No margin on the right side
-  plot(rf_pc, 
-       main = paste(current_date, alt, "PC", PC_selected, sep = " "))
-  par(mar=c(5,0,4,2)) #No margin on the left side
-  plot(c(0,1),type="n", axes=F, xlab="", ylab="")
-  legend("topright", colnames(rf_pc$err.rate),col=1:6,cex=0.8,fill=1:6)
-  
-  dev.off()
-  
-  # Plot variable importance
-  png(paste(current_date, alt, "RF_varimp", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
-  varImpPlot(rf, main = paste(current_date, alt, sep=" "))
-  
-  dev.off()
-  
-  png(paste(current_date, alt, "RF_varimp_PC", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
-  varImpPlot(rf_pc, main = paste(current_date, alt,"PC", PC_selected, sep=" "))
-  
-  dev.off()
-  
-  ## 2.1 Separation per date and height, flight height not included in the model ###
-  
-  if(length(unique(subset_data$Altitude)) >1 ){
-    
-    for(j in unique(subset_data$Altitude)){
-      
-      subset_data_2 <-  subset_data[subset_data$Altitude == j, ]
-      rf_data <- subset_data_2[,-c(1,2,3,6,7)]
-      rf_data$dens <- factor(rf_data$dens, levels = densorder)
-      print(paste(current_date, unique(subset_data_2$Altitude), sep ="_"))
-      
-     
-      split2<- sample(c(rep(0, 0.70 * nrow(rf_data)), rep(1, 0.30 * nrow(rf_data))))
-      
-      train <- rf_data[split2 == 0, ]
-      train_nodens <- dplyr::select(train, -dens)
-      
-      test <- rf_data[split2 == 1, ]
-      test_nodens <- dplyr::select(test, -dens)
-      
-      train$dens <- factor(train$dens, levels = densorder)
-      test$dens <- factor(test$dens, levels = densorder)
-      
-      # PCA
-      pca <- prcomp(train_nodens, center = T, scale. = T)
-      eigenval <- pca$sdev ^ 2
-      
-      PC_selected <- length(eigenval[eigenval > 1])
-      
-      train_pca_data <- data.frame(dens = train$dens, pca$x[,1:PC_selected])
-      
-      test_pca_data <- predict(pca, newdata = test_nodens)
-      test_pca_data <- data.frame(test_pca_data[,1:PC_selected])
-      
-      # RANDOM FOREST
-      
-      rf <- randomForest(dens~., data = train, proximity=TRUE, 
-                         ntree = 5000, importance = TRUE)
-      rf_pc <- randomForest(dens~., data = train_pca_data, proximity=TRUE, 
-                            ntree = 5000, importance = TRUE)
-      
-      # prediction
-      
-      pred <- predict(rf, newdata = test_nodens)
-      pred_pc <- predict(rf_pc, newdata = test_pca_data)
-      
-      cm <- confusionMatrix(pred, test$dens, mode = "everything")
-      cm_pc <- confusionMatrix(pred_pc, test$dens, mode = "everything")
-      
-      # Plot and save
-      
-      alt <- unique(subset_data_2$Altitude)
-      
-      conf_matrices[[k]] <- cm
-      names(conf_matrices)[k] <- paste(alt, current_date, sep = "_")
-      k <- k +1
-      conf_matrices[[k]] <- cm_pc
-      names(conf_matrices)[k] <- paste(alt, current_date, "PC", PC_selected, sep = "_")
-      k <- k +1
-      
-      results <- data.frame(t(cm$overall[c(1,6,2)]))
-      results_pc <- data.frame(t(cm_pc$overall[c(1,6,2)]))
-      results$date <- current_date
-      results_pc$date <- current_date
-      
-      results$alt <- alt
-      results_pc$alt <- alt
-      
-      results$PC <- 0
-      results_pc$PC <- PC_selected
-      
-      results_df <- rbind(results_df, results)
-      results_df <- rbind(results_df, results_pc)
-      
-      # Plot error  
-      png(paste(current_date, alt, "RF", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
-      
-      layout(matrix(c(1,2),nrow=1),
-             width=c(4,1)) 
-      par(mar=c(5,4,4,0)) #No margin on the right side
-      plot(rf, 
-           main = paste(current_date, alt, sep = " "))
-      par(mar=c(5,0,4,2)) #No margin on the left side
-      plot(c(0,1),type="n", axes=F, xlab="", ylab="")
-      legend("topright", colnames(rf_pc$err.rate),col=1:6,cex=0.8,fill=1:6)
-      dev.off()
-      
-      png(paste(current_date, alt, "RF_PC", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
-      
-      layout(matrix(c(1,2),nrow=1),
-             width=c(4,1)) 
-      par(mar=c(5,4,4,0)) #No margin on the right side
-      plot(rf_pc, 
-           main = paste(current_date, alt, "PC", PC_selected, sep = " "))
-      par(mar=c(5,0,4,2)) #No margin on the left side
-      plot(c(0,1),type="n", axes=F, xlab="", ylab="")
-      legend("topright", colnames(rf_pc$err.rate),col=1:6,cex=0.8,fill=1:6)
-      
-      dev.off()
-      
-      # Plot variable importance
-      png(paste(current_date, alt, "RF_varimp", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
-      varImpPlot(rf, main = paste(current_date, alt, sep=" "))
-      
-      dev.off()
-      
-      png(paste(current_date, alt, "RF_varimp_PC", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
-      varImpPlot(rf_pc, main = paste(current_date, alt,"PC", PC_selected, sep=" "))
-      
-      dev.off()
-      
-      
-    }
-  }
-}
-
-setwd(paste(out.dir, "RandomForests", sep = "/"))
-write.csv(results_df, "Accuracy_RF_density_prediction.csv")
-
-

@@ -101,3 +101,51 @@ write.csv(cor_df, "density_vegindex_spearman_cor_pval.csv")
 
 
 
+
+
+####### PCA #######
+
+cbPalette <- c("#000000", "#E69F00",  "#009E73", "#0072B2", "#D55E00", "#CC79A7")
+densorder <- c("35","70","140", "280", "560")
+
+
+for(i in unique(df$Altitude)){
+  data <- df[df$Altitude == i, ]
+  print(i)
+  
+  for(j in 1:length(unique(data$Date))){
+    current_date <- unique(data$Date)[j]
+    print(current_date)
+    
+    # Subset data per date 
+    
+    subset_data <- data[data$Date == current_date,]
+    subset_data$dens <- factor(subset_data$dens, levels = densorder)
+    
+    #### PCA & PLOT ####
+    
+    pca_res <- prcomp(subset_data[,8:ncol(subset_data)], center = T,  scale. = TRUE)
+    
+    eigenval <- pca_res$sdev ^ 2
+    
+    PC_selected <- length(eigenval[eigenval > 1])
+    
+    var_explained <- eigenval/sum(eigenval)
+    var_explained <- paste(as.character(round(sum(var_explained[1:PC_selected])*100,2)), "%", sep = "")
+    var_explained <- paste(var_explained, "explained", sep = " ")
+    
+    
+    p1 <- autoplot(pca_res, data = subset_data, colour = 'dens',
+                   shape = "var",
+                   main =  paste(i,
+                                 current_date, var_explained, sep = "_")) +
+      scale_color_manual(values=cbPalette)
+    
+    setwd(paste(fig.dir, "Exploration/PCA", sep ="/"))
+    png(paste(i, current_date, ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
+    plot(p1)
+    dev.off()
+    
+  }
+  
+}
