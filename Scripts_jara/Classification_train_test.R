@@ -310,10 +310,10 @@ data <- df
 
 results_df <- NULL
 round <- 1
-# while(round < 11){
-#   
-#   print(paste("Round: ", round))
-#   
+while(round < 11){
+
+  print(paste("Round: ", round))
+
   for(i in 1:length(unique(data$Date))){
     current_date <- unique(data$Date)[i]
     print(current_date)
@@ -550,8 +550,8 @@ round <- 1
     }
   }
   
-#   round <- round +1
-# }
+  round <- round +1
+}
 
 results_df$k <- 10
 results_df$repetitions <- 10
@@ -572,6 +572,8 @@ densorder <- c("35","70","140", "280", "560")
 
 set.seed(12345) 
 results_df <- NULL
+error_df <- NULL
+importance_df <- NULL
 conf_matrices <- list()
 k <- 1
 data <- df
@@ -674,6 +676,49 @@ while(round < 11){
     results_df <- rbind(results_df, results)
     results_df <- rbind(results_df, results_pc)
     
+    # importance
+    
+    importance <- data.frame(rf$importance) %>% 
+      dplyr::select(MeanDecreaseAccuracy, MeanDecreaseGini) %>% 
+      mutate(date = current_date,
+             alt = alt,
+             PC = 0, 
+             mtry = rf$mtry) %>% 
+      tibble::rownames_to_column("var")
+    
+    importance_pc <- data.frame(rf_pc$importance) %>% 
+      dplyr::select(MeanDecreaseAccuracy, MeanDecreaseGini) %>% 
+      mutate(date = current_date,
+             alt = alt,
+             PC = PC_selected, 
+             mtry = rf_pc$mtry)%>% 
+      tibble::rownames_to_column("var")
+    
+    importance_results <- rbind(importance, importance_pc)
+    importance_df <- rbind(importance_df, importance_results)
+    
+    
+    # error rate 
+    
+    error <- data.frame(t(rf$err.rate[5000,]))
+    error_pc <- data.frame(t(rf_pc$err.rate[5000,]))
+    
+    error$date <- current_date
+    error_pc$date <- current_date
+    
+    error$alt <- alt
+    error_pc$alt <- alt
+    
+    error$PC <- 0
+    error_pc$PC <- PC_selected
+    
+    error$mtry <- rf$mtry
+    error_pc$mtry <- rf_pc$mtry
+    
+    error_results <- rbind(error,error_pc)
+    error_df <- rbind(error_df, error_results)
+    
+
     
     # Plot error
     # setwd(paste(fig.dir, "RandomForests/80-20split", sep = "/"))
@@ -789,6 +834,47 @@ while(round < 11){
         results_df <- rbind(results_df, results)
         results_df <- rbind(results_df, results_pc)
         
+        # importance
+        
+        importance <- data.frame(rf$importance) %>% 
+          dplyr::select(MeanDecreaseAccuracy, MeanDecreaseGini) %>% 
+          mutate(date = current_date,
+                 alt = alt,
+                 PC = 0, 
+                 mtry = rf$mtry) %>% 
+          tibble::rownames_to_column("var")
+        
+        importance_pc <- data.frame(rf_pc$importance) %>% 
+          dplyr::select(MeanDecreaseAccuracy, MeanDecreaseGini) %>% 
+          mutate(date = current_date,
+                 alt = alt,
+                 PC = PC_selected, 
+                 mtry = rf_pc$mtry)%>% 
+          tibble::rownames_to_column("var")
+        
+        importance_results <- rbind(importance, importance_pc)
+        importance_df <- rbind(importance_df, importance_results)
+        
+        # error rate 
+        
+        error <- data.frame(t(rf$err.rate[5000,]))
+        error_pc <- data.frame(t(rf_pc$err.rate[5000,]))
+        
+        error$date <- current_date
+        error_pc$date <- current_date
+        
+        error$alt <- alt
+        error_pc$alt <- alt
+        
+        error$PC <- 0
+        error_pc$PC <- PC_selected
+        
+        error$mtry <- rf$mtry
+        error_pc$mtry <- rf_pc$mtry
+        
+        error_results <- rbind(error,error_pc)
+        error_df <- rbind(error_df, error_results)
+        
         # Plot error
 
         # png(paste(current_date, alt, "RF", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
@@ -836,7 +922,8 @@ while(round < 11){
 # to take a quick look
 aggregate(results_df$Accuracy, list(results_df$date), FUN=mean) 
 
-setwd(paste(out.dir, "RandomForests", sep = "/"))
-write.csv(results_df, "Accuracy_RF_density_prediction_10reps_80-20split.csv")
-
+setwd(paste(out.dir, "RandomForests/results/raw", sep = "/"))
+write.csv(error_df, "OOB_error_rate_10reps_8020split.csv")
+write.csv(results_df, "Accuracy_RF_density_prediction_10reps_8020split.csv")
+write.csv(importance_df, "var_importance_8020split")
 

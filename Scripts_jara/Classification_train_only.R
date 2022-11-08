@@ -245,7 +245,7 @@ results_df <- NULL
 
 round <- 1
 
-while(round < 10){
+while(round < 11){
   
   print(paste("Round: ", round))
   
@@ -430,7 +430,7 @@ while(round < 10){
 aggregate(results_df$Accuracy, list(results_df$date), FUN=mean) 
 
 setwd(paste(out.dir, "ctree", sep = "/"))
-write.csv(results_df, "ctree_results_trainonly-nosplit.csv")
+write.csv(results_df, "ctree__cv_10_10-nosplit_trainonly2.csv")
 
 # -------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------
