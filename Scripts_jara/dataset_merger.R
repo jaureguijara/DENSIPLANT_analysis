@@ -77,7 +77,10 @@ write.csv(design, "coordinates_var_dens_picref.csv")
 
 finalDF <- df %>% 
   merge(design, by= "picref") %>% 
-  dplyr::select(Image.Name, Date, Altitude, var, dens, Rows, Plots, everything(), -picref)
+  mutate(Genotype = var,
+         Density =  dens) %>% 
+  dplyr::select(Image.Name, Date, Altitude, Genotype, Density, Rows, Plots, everything(), -picref, -var, -dens)
+
 
 print(head(finalDF))
 setwd(out.dir)

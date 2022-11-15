@@ -21,55 +21,21 @@ if(Sys.info()["user"] == "Jara"){
 setwd(in.dir)
 df <- read.csv("combined_densiplant_dataset.csv", header = T)
 df <- df[,-1]
-df <- arrange(df, dens)
-df$dens <- as.character(df$dens)
+df <- arrange(df, Density)
+df$Density <- as.factor(df$Density)
 df$Date <- as.Date(df$Date)
 
 df_15 <- df[df$Altitude == "15m",]
 df_30 <- df[df$Altitude == "30m",]
 df_50 <- df[df$Altitude == "50m",]
 
-data <- df[, c(1:7, 9, 17, 19, 21)]
+data <- df
 
 ##### 1. Data exploration for ANOVA ####
 
-## CHECK ANOVA ASSUMPTIONS 
-
-assumptions <- NULL
-
-for(i in unique(df$Altitude)){
-  data <- df[df$Altitude == i, ]
-  
-  for(i in 1:length(unique(data$Date))){
-    current_date <- unique(data$Date)[i]
-    print(current_date)
-    subset_data <- data[data$Date == current_date,]
-    
-    for(i in 8:ncol(subset_data)){
-      name <- colnames(subset_data)[i]
-      variable <- subset_data[,i]
-      
-      h <- leveneTest(variable ~ dens*var, subset_data)
-      n <- shapiro.test(variable)
-      
-      ass <- c(name, c(unique(data$Altitude)),current_date, n$p.value, h$`Pr(>F)`[1])
-      
-      assumptions <- rbind(assumptions, ass)
-    }
-  }
-}
-
-assumptions <- data.frame(assumptions)
-rownames(assumptions) <- NULL
-colnames(assumptions) <- c("variable", "altitude", "date", "norm_pvalue", "homo_pvalue")
-setwd(paste(out.dir, "Exploration", sep ="/"))
-write.csv(assumptions,"assumptions_check.csv")
-
-
-
 # CHECK ASSUMPTIONS PER RESPONSE VARIABLES
 
-assumptions <- NULL
+result_df <- NULL
 
 for(i in 1:length(unique(data$Date))){
   current_date <- unique(data$Date)[i]
@@ -77,80 +43,47 @@ for(i in 1:length(unique(data$Date))){
   
   # Subset data per date 
   
-  subset_data <- data[data$Date == current_date,]
+  subset_date <- data[data$Date == current_date,]
   
-  for(i in 8:ncol(subset_data)){
-    name <- colnames(subset_data)[i]
-    variable <- subset_data[,i]
+  for(alt in unique(subset_date$Altitude)){
+    subset_alt <- subset_date[subset_date$Altitude == alt,]
+    print(alt)
     
-    if(length(unique(subset_data$Altitude))>1){
-      an <- aov(variable ~ var*dens*Altitude + Rows, data = subset_data)
+    for(i in 8:ncol(subset_alt)){
+      name <- colnames(subset_alt)[i]
+      variable <- subset_alt[,i]
+      print(name)
       
-      h <- leveneTest(variable ~ dens*var*Altitude, subset_data)
-      n <- shapiro.test(an$residuals)
-      plot(hist(an$residuals))
-    }
-    
-    else {
-      an <- aov(variable ~ var*dens + Rows, data = subset_data)
+      an <- aov(variable ~ Genotype*Density + Rows, data = subset_alt)
       
-      h <-leveneTest(variable ~ dens*var, subset_data)
+      # setwd(paste(fig.dir, "Exploration/Assumptions/Homoscedasticity", sep = "/"))
+      # 
+      # png(paste(current_date,alt,name, "ResVSFit", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
+      # plot(an, which = 1, main = paste(current_date,alt, name, sep ="_"))
+      # dev.off()
+      
+      # setwd(paste(fig.dir, "Exploration/Assumptions/Normality", sep = "/"))
+      # 
+      # png(paste(current_date,alt, name, "QQplot", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
+      # plot(an, which = 2, main = paste(current_date,alt, name, sep ="_"))
+      # dev.off()
+    
       n <- shapiro.test(an$residuals)
-      plot(hist(an$residuals))
-    }
-    
-    ass <- c(name,as.character(current_date), n$p.value, h$`Pr(>F)`[1])
-    
-    assumptions <- rbind(assumptions, ass)
+     
+      result <- c(name,as.character(current_date), alt,  n$p.value)
+      
+      result_df <- rbind(result_df, result)
+    }    
   }
 }
-assumptions <- data.frame(assumptions)
-rownames(assumptions) <- NULL
-colnames(assumptions) <- c("variable", "date", "norm_pvalue", "homo_pvalue")
-assumptions$date <- as.Date(assumptions$date)
+
+result_df <- data.frame(result_df)
+rownames(result_df) <- NULL
+colnames(result_df) <- c("variable", "date", "Altitude", "normality_pvalue")
+result_df$date <- as.Date(result_df$date)
 setwd(paste(out.dir, "Exploration", sep ="/"))
-write.csv(assumptions,"assumptions_check_2.csv")
+write.csv(result_df,"normality_check.csv")
 
-
-# CHECK ASSUMPTIONS FOR RESIDUALS
-
-assumptions <- NULL
-for(j in unique(df$Altitude)){
-  data <- df[df$Altitude == j,]
-  
-  for(i in 1:length(unique(data$Date))){
-    current_date <- unique(data$Date)[i]
-    print(current_date)
-    
-    # Subset data per date 
-    
-    subset_data <- data[data$Date == current_date,]
-    
-    for(i in 8:ncol(subset_data)){
-      name <- colnames(subset_data)[i]
-      variable <- subset_data[,i]
-      
-      an <- aov(variable ~ var*dens + Rows, data = subset_data)
-      
-      h <-leveneTest(variable ~ dens*var, subset_data)
-      n <- shapiro.test(an$residuals)
-      plot(hist(an$residuals))
-      
-      
-      ass <- c(name,as.character(current_date), unique(data$Altitude), n$p.value, h$`Pr(>F)`[1])
-      
-      assumptions <- rbind(assumptions, ass)
-    }
-  }
-  
-}
-
-assumptions <- data.frame(assumptions)
-rownames(assumptions) <- NULL
-colnames(assumptions) <- c("variable", "date", "Altitude", "norm_pvalue", "homo_pvalue")
-assumptions$date <- as.Date(assumptions$date)
-setwd(paste(out.dir, "Exploration", sep ="/"))
-write.csv(assumptions,"assumptions_check_3.csv")
 
 variable  <- "TGI"
 subset_data <- df[df$Date == "2022-05-03",]

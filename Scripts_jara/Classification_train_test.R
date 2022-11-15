@@ -26,8 +26,8 @@ if(Sys.info()["user"] == "Jara"){
 setwd(in.dir)
 df <- read.csv("combined_densiplant_dataset.csv", header = T)
 df <- df[,-1]
-df <- arrange(df, dens)
-df$dens <- as.character(df$dens)
+df <- arrange(df, Density)
+df$Density<- as.character(df$Density)
 
 
 ######## 1.  DECISSION (CLASSIFICATION) CART TREES ########
@@ -53,8 +53,8 @@ round <- 1
     # Subset data per date 
     
     subset_data <- data[data$Date == current_date,]
-    subset_data$dens <- as.factor(as.character(subset_data$dens))
-    subset_data$var <- as.numeric(as.factor(subset_data$var))
+    subset_data$Density<- as.factor(as.character(subset_data$dens))
+    subset_data$Genotype<- as.numeric(as.factor(subset_data$var))
     subset_data$Altitude <- as.factor(subset_data$Altitude)
     
     ## 1.1 Separation per date only, including flight height as predictor variable ###
@@ -72,13 +72,13 @@ round <- 1
     split1<- sample(c(rep(0, 0.80 * nrow(tree_data)), rep(1, 0.20 * nrow(tree_data))))
     
     train <- tree_data[split1 == 0, ]
-    train_nodens <- dplyr::select(train, -dens)
+    train_noDensity<- dplyr::select(train, -dens)
     
     test <- tree_data[split1 == 1, ]
-    test_nodens <- dplyr::select(test, -dens)
+    test_noDensity<- dplyr::select(test, -dens)
     
-    train$dens <- factor(train$dens, levels = densorder)
-    test$dens <- factor(test$dens, levels = densorder)
+    train$Density<- factor(train$dens, levels = densorder)
+    test$Density<- factor(test$dens, levels = densorder)
     
     # PCA
     pca <- prcomp(train_nodens, center = T, scale. = T)
@@ -86,13 +86,13 @@ round <- 1
     
     PC_selected <- length(eigenval[eigenval > 1])
     
-    train_pca_data <- data.frame(dens = train$dens, pca$x[,1:PC_selected])
+    train_pca_data <- data.frame(Density= train$dens, pca$x[,1:PC_selected])
     
     test_pca_data <- predict(pca, newdata = test_nodens)
     test_pca_data <- data.frame(test_pca_data[,1:PC_selected])
     
-    train$dens <- factor(train$dens, levels = densorder)
-    train_pca_data$dens <- factor(train_pca_data$dens, levels = densorder)
+    train$Density<- factor(train$dens, levels = densorder)
+    train_pca_data$Density<- factor(train_pca_data$dens, levels = densorder)
     
     # Create a trainControl object to control how the train function creates the model
     train_control <- trainControl(method = "repeatedcv",   # Use cross validation
@@ -104,7 +104,7 @@ round <- 1
     
     
     # Use the train() function to create the model
-    validated_tree <- train(dens ~. ,
+    validated_tree <- train(Density~. ,
                             data= train,                        # Data set
                             method="rpart",                     # Model type(decision tree)
                             trControl= train_control,           # Model control options
@@ -112,7 +112,7 @@ round <- 1
                             maxdepth = 5,                       # Additional parameters***
                             minbucket= 5)
     
-    validated_tree_pc <- train(dens ~. ,
+    validated_tree_pc <- train(Density~. ,
                                data= train_pca_data,               # Data set
                                method="rpart",                     # Model type(decision tree)
                                trControl= train_control,           # Model control options
@@ -189,7 +189,7 @@ round <- 1
         
         subset_data_2 <-  subset_data[subset_data$Altitude == j, ]
         tree_data <- subset_data_2[,-c(1,2,3,6,7)]
-        tree_data$var <- as.numeric(as.factor(tree_data$var))
+        tree_data$Genotype<- as.numeric(as.factor(tree_data$var))
         
         print(paste(current_date, unique(subset_data_2$Altitude), sep ="_"))
         
@@ -198,13 +198,13 @@ round <- 1
         split2<- sample(c(rep(0, 0.80 * nrow(tree_data)), rep(1, 0.20 * nrow(tree_data))))
         
         train <- tree_data[split2 == 0, ]
-        train_nodens <- dplyr::select(train, -dens)
+        train_noDensity<- dplyr::select(train, -dens)
         
         test <- tree_data[split2 == 1, ]
-        test_nodens <- dplyr::select(test, -dens)
+        test_noDensity<- dplyr::select(test, -dens)
         
-        train$dens <- factor(train$dens, levels = densorder)
-        test$dens <- factor(test$dens, levels = densorder)
+        train$Density<- factor(train$dens, levels = densorder)
+        test$Density<- factor(test$dens, levels = densorder)
         
         # PCA
         pca <- prcomp(train_nodens, center = T, scale. = T)
@@ -212,14 +212,14 @@ round <- 1
         
         PC_selected <- length(eigenval[eigenval > 1])
         
-        train_pca_data <- data.frame(dens = train$dens, pca$x[,1:PC_selected])
+        train_pca_data <- data.frame(Density= train$dens, pca$x[,1:PC_selected])
         
         test_pca_data <- predict(pca, newdata = test_nodens)
         test_pca_data <- data.frame(test_pca_data[,1:PC_selected])
         
         # CART trees
         
-        validated_tree <- train(dens ~. ,
+        validated_tree <- train(Density~. ,
                                 data= train,                        # Data set
                                 method="rpart",                     # Model type(decision tree)
                                 trControl= train_control,           # Model control options
@@ -227,7 +227,7 @@ round <- 1
                                 maxdepth = 5,                       # Additional parameters***
                                 minbucket= 5)
         
-        validated_tree_pc <- train(dens ~. ,
+        validated_tree_pc <- train(Density~. ,
                                    data= train_pca_data,               # Data set
                                    method="rpart",                     # Model type(decision tree)
                                    trControl= train_control,           # Model control options
@@ -321,8 +321,8 @@ while(round < 11){
     # Subset data per date 
     
     subset_data <- data[data$Date == current_date,]
-    subset_data$dens <- as.factor(as.character(subset_data$dens))
-    subset_data$var <- as.numeric(as.factor(subset_data$var))
+    subset_data$Density<- as.factor(as.character(subset_data$dens))
+    subset_data$Genotype<- as.numeric(as.factor(subset_data$var))
     subset_data$Altitude <- as.factor(subset_data$Altitude)
     
     ## 1.1 Separation per date only, including flight height as predictor variable ###
@@ -340,13 +340,13 @@ while(round < 11){
     split1<- sample(c(rep(0, 0.80 * nrow(tree_data)), rep(1, 0.20 * nrow(tree_data))))
     
     train <- tree_data[split1 == 0, ]
-    train_nodens <- dplyr::select(train, -dens)
+    train_noDensity<- dplyr::select(train, -dens)
     
     test <- tree_data[split1 == 1, ]
-    test_nodens <- dplyr::select(test, -dens)
+    test_noDensity<- dplyr::select(test, -dens)
     
-    train$dens <- factor(train$dens, levels = densorder)
-    test$dens <- factor(test$dens, levels = densorder)
+    train$Density<- factor(train$dens, levels = densorder)
+    test$Density<- factor(test$dens, levels = densorder)
     
     # PCA
     pca <- prcomp(train_nodens, center = T, scale. = T)
@@ -354,13 +354,13 @@ while(round < 11){
     
     PC_selected <- length(eigenval[eigenval > 1])
     
-    train_pca_data <- data.frame(dens = train$dens, pca$x[,1:PC_selected])
+    train_pca_data <- data.frame(Density= train$dens, pca$x[,1:PC_selected])
     
     test_pca_data <- predict(pca, newdata = test_nodens)
     test_pca_data <- data.frame(test_pca_data[,1:PC_selected])
     
-    train$dens <- factor(train$dens, levels = densorder)
-    train_pca_data$dens <- factor(train_pca_data$dens, levels = densorder)
+    train$Density<- factor(train$dens, levels = densorder)
+    train_pca_data$Density<- factor(train_pca_data$dens, levels = densorder)
     
     #Set required parameters for the model type we are using**
     tune_grid = expand.grid(mincriterion=c(0.05))
@@ -373,14 +373,14 @@ while(round < 11){
     
     
     # Use the train() function to create the model
-    validated_tree <- train(dens ~. ,
+    validated_tree <- train(Density~. ,
                             data= train,                  
                             method="ctree",                     # Model type(ctree)
                             trControl= train_control, 
                             tuneGrid = tune_grid)           
     
     
-    validated_tree_pc <- train(dens ~. ,
+    validated_tree_pc <- train(Density~. ,
                             data= train_pca_data,                  
                             method="ctree",                     # Model type(ctree)
                             trControl= train_control, 
@@ -456,7 +456,7 @@ while(round < 11){
         
         subset_data_2 <-  subset_data[subset_data$Altitude == j, ]
         tree_data <- subset_data_2[,-c(1,2,3,6,7)]
-        tree_data$var <- as.numeric(as.factor(tree_data$var))
+        tree_data$Genotype<- as.numeric(as.factor(tree_data$var))
         
         print(paste(current_date, unique(subset_data_2$Altitude), sep ="_"))
         
@@ -465,13 +465,13 @@ while(round < 11){
         split2<- sample(c(rep(0, 0.80 * nrow(tree_data)), rep(1, 0.20 * nrow(tree_data))))
         
         train <- tree_data[split2 == 0, ]
-        train_nodens <- dplyr::select(train, -dens)
+        train_noDensity<- dplyr::select(train, -dens)
         
         test <- tree_data[split2 == 1, ]
-        test_nodens <- dplyr::select(test, -dens)
+        test_noDensity<- dplyr::select(test, -dens)
         
-        train$dens <- factor(train$dens, levels = densorder)
-        test$dens <- factor(test$dens, levels = densorder)
+        train$Density<- factor(train$dens, levels = densorder)
+        test$Density<- factor(test$dens, levels = densorder)
         
         # PCA
         pca <- prcomp(train_nodens, center = T, scale. = T)
@@ -479,20 +479,20 @@ while(round < 11){
         
         PC_selected <- length(eigenval[eigenval > 1])
         
-        train_pca_data <- data.frame(dens = train$dens, pca$x[,1:PC_selected])
+        train_pca_data <- data.frame(Density= train$dens, pca$x[,1:PC_selected])
         
         test_pca_data <- predict(pca, newdata = test_nodens)
         test_pca_data <- data.frame(test_pca_data[,1:PC_selected])
         
         # ctrees
-        validated_tree <- train(dens ~. ,
+        validated_tree <- train(Density~. ,
                                 data= train,                  
                                 method="ctree",                     
                                 trControl= train_control, 
                                 tuneGrid = tune_grid)           
         
         
-        validated_tree_pc <- train(dens ~. ,
+        validated_tree_pc <- train(Density~. ,
                                    data= train_pca_data,                  
                                    method="ctree",                     
                                    trControl= train_control, 
@@ -579,8 +579,8 @@ k <- 1
 data <- df
 round <-1
 
-while(round < 11){
-  print(paste("Round: ", round))
+# while(round < 11){
+#   print(paste("Round: ", round))
   
   for(i in 1:length(unique(data$Date))){
     current_date <- unique(data$Date)[i]
@@ -589,16 +589,19 @@ while(round < 11){
     # Subset data per date 
     
     subset_data <- data[data$Date == current_date,]
-    subset_data$dens <- as.factor(as.character(subset_data$dens))
-    subset_data$var <- as.numeric(as.factor(subset_data$var))
-    subset_data$Altitude <- as.factor(subset_data$Altitude)
-    
-    ## 2.1 Separation per date only, including flight height as predictor variable ###
+    subset_data$Density<- as.factor(as.character(subset_data$dens))
+    subset_data$Genotype <- as.numeric(as.factor(subset_data$Genotype))
+
+    ## 2.1 Separation per date only, including flight height as predictor Genotypeiable ###
     
     if(length(unique(subset_data$Altitude))>1){
       rf_data <- subset_data[,-c(1,2,6,7)]
-      rf_data$Altitude <- as.numeric(rf_data$Altitude)
-    }
+      
+      for(k in unique(rf_data$Altitude)){
+        sub_alt <- 
+        
+      }
+        
     
     else{
       rf_data <- subset_data[,-c(1,2,6,7,3)]
@@ -609,13 +612,13 @@ while(round < 11){
     split1<- sample(c(rep(0, 0.80 * nrow(rf_data)), rep(1, 0.20 * nrow(rf_data))))
     
     train <- rf_data[split1 == 0, ]
-    train_nodens <- dplyr::select(train, -dens)
+    train_noDensity<- dplyr::select(train, -dens)
     
     test <- rf_data[split1 == 1, ]
-    test_nodens <- dplyr::select(test, -dens)
+    test_noDensity<- dplyr::select(test, -dens)
     
-    train$dens <- factor(train$dens, levels = densorder)
-    test$dens <- factor(test$dens, levels = densorder)
+    train$Density<- factor(train$dens, levels = densorder)
+    test$Density<- factor(test$dens, levels = densorder)
     
     # PCA
     pca <- prcomp(train_nodens, center = T, scale. = T)
@@ -623,13 +626,13 @@ while(round < 11){
     
     PC_selected <- length(eigenval[eigenval > 1])
     
-    train_pca_data <- data.frame(dens = train$dens, pca$x[,1:PC_selected])
+    train_pca_data <- data.frame(Density= train$dens, pca$x[,1:PC_selected])
     
     test_pca_data <- predict(pca, newdata = test_nodens)
     test_pca_data <- data.frame(test_pca_data[,1:PC_selected])
     
-    train$dens <- factor(train$dens, levels = densorder)
-    train_pca_data$dens <- factor(train_pca_data$dens, levels = densorder)
+    train$Density<- factor(train$dens, levels = densorder)
+    train_pca_data$Density<- factor(train_pca_data$dens, levels = densorder)
     
     # RANDOM FOREST
     rf <- randomForest(dens~., data = train, proximity=TRUE, 
@@ -684,7 +687,7 @@ while(round < 11){
              alt = alt,
              PC = 0, 
              mtry = rf$mtry) %>% 
-      tibble::rownames_to_column("var")
+      tibble::rownames_to_column("Genotype")
     
     importance_pc <- data.frame(rf_pc$importance) %>% 
       dplyr::select(MeanDecreaseAccuracy, MeanDecreaseGini) %>% 
@@ -692,7 +695,7 @@ while(round < 11){
              alt = alt,
              PC = PC_selected, 
              mtry = rf_pc$mtry)%>% 
-      tibble::rownames_to_column("var")
+      tibble::rownames_to_column("Genotype")
     
     importance_results <- rbind(importance, importance_pc)
     importance_df <- rbind(importance_df, importance_results)
@@ -748,14 +751,14 @@ while(round < 11){
     # 
     # dev.off()
     # 
-    # # Plot variable importance
-    # png(paste(current_date, alt, "RF_varimp", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
-    # varImpPlot(rf, main = paste(current_date, alt, sep=" "))
+    # # Plot Genotypeiable importance
+    # png(paste(current_date, alt, "RF_Genotypeimp", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
+    # GenotypeImpPlot(rf, main = paste(current_date, alt, sep=" "))
     # 
     # dev.off()
     # 
-    # png(paste(current_date, alt, "RF_varimp_PC", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
-    # varImpPlot(rf_pc, main = paste(current_date, alt,"PC", PC_selected, sep=" "))
+    # png(paste(current_date, alt, "RF_Genotypeimp_PC", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
+    # GenotypeImpPlot(rf_pc, main = paste(current_date, alt,"PC", PC_selected, sep=" "))
     # 
     # dev.off()
     
@@ -769,20 +772,20 @@ while(round < 11){
         
         subset_data_2 <-  subset_data[subset_data$Altitude == j, ]
         rf_data <- subset_data_2[,-c(1,2,3,6,7)]
-        rf_data$dens <- factor(rf_data$dens, levels = densorder)
+        rf_data$Density<- factor(rf_data$dens, levels = densorder)
         print(paste(current_date, unique(subset_data_2$Altitude), sep ="_"))
         
        
         split2<- sample(c(rep(0, 0.80 * nrow(rf_data)), rep(1, 0.20 * nrow(rf_data))))
         
         train <- rf_data[split2 == 0, ]
-        train_nodens <- dplyr::select(train, -dens)
+        train_noDensity<- dplyr::select(train, -dens)
         
         test <- rf_data[split2 == 1, ]
-        test_nodens <- dplyr::select(test, -dens)
+        test_noDensity<- dplyr::select(test, -dens)
         
-        train$dens <- factor(train$dens, levels = densorder)
-        test$dens <- factor(test$dens, levels = densorder)
+        train$Density<- factor(train$dens, levels = densorder)
+        test$Density<- factor(test$dens, levels = densorder)
         
         # PCA
         pca <- prcomp(train_nodens, center = T, scale. = T)
@@ -790,7 +793,7 @@ while(round < 11){
         
         PC_selected <- length(eigenval[eigenval > 1])
         
-        train_pca_data <- data.frame(dens = train$dens, pca$x[,1:PC_selected])
+        train_pca_data <- data.frame(Density= train$dens, pca$x[,1:PC_selected])
         
         test_pca_data <- predict(pca, newdata = test_nodens)
         test_pca_data <- data.frame(test_pca_data[,1:PC_selected])
@@ -842,7 +845,7 @@ while(round < 11){
                  alt = alt,
                  PC = 0, 
                  mtry = rf$mtry) %>% 
-          tibble::rownames_to_column("var")
+          tibble::rownames_to_column("Genotype")
         
         importance_pc <- data.frame(rf_pc$importance) %>% 
           dplyr::select(MeanDecreaseAccuracy, MeanDecreaseGini) %>% 
@@ -850,7 +853,7 @@ while(round < 11){
                  alt = alt,
                  PC = PC_selected, 
                  mtry = rf_pc$mtry)%>% 
-          tibble::rownames_to_column("var")
+          tibble::rownames_to_column("Genotype")
         
         importance_results <- rbind(importance, importance_pc)
         importance_df <- rbind(importance_df, importance_results)
@@ -902,22 +905,22 @@ while(round < 11){
         # 
         # dev.off()
         # 
-        # # Plot variable importance
-        # png(paste(current_date, alt, "RF_varimp", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
-        # varImpPlot(rf, main = paste(current_date, alt, sep=" "))
+        # # Plot Genotypeiable importance
+        # png(paste(current_date, alt, "RF_Genotypeimp", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
+        # GenotypeImpPlot(rf, main = paste(current_date, alt, sep=" "))
         # 
         # dev.off()
         # 
-        # png(paste(current_date, alt, "RF_varimp_PC", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
-        # varImpPlot(rf_pc, main = paste(current_date, alt,"PC", PC_selected, sep=" "))
+        # png(paste(current_date, alt, "RF_Genotypeimp_PC", ".png", sep="_"), width = 8, height = 6, units = 'in', res = 300)
+        # GenotypeImpPlot(rf_pc, main = paste(current_date, alt,"PC", PC_selected, sep=" "))
         # 
         # dev.off()
         
       }
     }
   }
-  round <- round +1
-}
+#   round <- round +1
+# }
 
 # to take a quick look
 aggregate(results_df$Accuracy, list(results_df$date), FUN=mean) 
@@ -925,5 +928,5 @@ aggregate(results_df$Accuracy, list(results_df$date), FUN=mean)
 setwd(paste(out.dir, "RandomForests/results/raw", sep = "/"))
 write.csv(error_df, "OOB_error_rate_10reps_8020split.csv")
 write.csv(results_df, "Accuracy_RF_density_prediction_10reps_8020split.csv")
-write.csv(importance_df, "var_importance_8020split")
+write.csv(importance_df, "Genotype_importance_8020split")
 
